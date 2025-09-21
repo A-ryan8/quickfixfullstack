@@ -1,0 +1,45 @@
+{
+  "signup": {
+    "title": "नगर निगम प्रशासक पंजीकरण",
+    "subtitle": "नागरिक प्रबंधन मंच में शामिल हों",
+    "municipalCorp": "नगर निगम का नाम",
+    "municipalCorpPlaceholder": "निगम का नाम चुनें या दर्ज करें",
+    "department": "विभाग का नाम",
+    "departmentPlaceholder": "विभाग चुनें",
+    "email": "विभाग ईमेल आईडी",
+    "emailPlaceholder": "विभाग ईमेल दर्ज करें",
+    "password": "पासवर्ड",
+    "passwordPlaceholder": "एक मजबूत पासवर्ड बनाएं",
+    "confirmPassword": "पासवर्ड की पुष्टि करें",
+    "confirmPasswordPlaceholder": "अपना पासवर्ड फिर से दर्ज करें",
+    "officeLocation": "कार्यालय स्थान / क्षेत्र",
+    "officeLocationPlaceholder": "कार्यालय स्थान चुनें या दर्ज करें",
+    "preferredLanguage": "पसंदीदा भाषा",
+    "signupButton": "खाता बनाएं",
+    "signupButtonLoading": "खाता बनाया जा रहा है...",
+    "loginLink": "पहले से खाता है? लॉगिन करें",
+    "validation": {
+      "required": "यह फ़ील्ड आवश्यक है",
+      "emailInvalid": "कृपया एक वैध ईमेल पता दर्ज करें",
+      "passwordMismatch": "पासवर्ड मेल नहीं खाते",
+      "passwordMinLength": "पासवर्ड कम से कम 8 अक्षर का होना चाहिए"
+    },
+    "success": "खाता सफलतापूर्वक बनाया गया! कृपया लॉगिन करें।",
+    "error": "साइन अप असफल। कृपया पुनः प्रयास करें।"
+  },
+  "departments": {
+    "sanitation": "सफाई",
+    "publicWorks": "लोक निर्माण",
+    "streetlights": "सड़क रोशनी",
+    "waterSupply": "जल आपूर्ति",
+    "wasteManagement": "अपशिष्ट प्रबंधन",
+    "transportation": "परिवहन",
+    "planning": "शहरी नियोजन",
+    "safety": "सुरक्षा और सुरक्षा"
+  },
+  "languages": {
+    "english": "अंग्रेजी",
+    "hindi": "हिंदी",
+    "marathi": "मराठी"
+  }
+}

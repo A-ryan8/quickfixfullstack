@@ -1,0 +1,45 @@
+{
+  "signup": {
+    "title": "नगरपालिका प्रशासक नोंदणी",
+    "subtitle": "नागरी व्यवस्थापन प्लॅटफॉर्ममध्ये सामील व्हा",
+    "municipalCorp": "नगरपालिका नाव",
+    "municipalCorpPlaceholder": "निगमाचे नाव निवडा किंवा प्रविष्ट करा",
+    "department": "विभागाचे नाव",
+    "departmentPlaceholder": "विभाग निवडा",
+    "email": "विभाग ईमेल आयडी",
+    "emailPlaceholder": "विभाग ईमेल प्रविष्ट करा",
+    "password": "पासवर्ड",
+    "passwordPlaceholder": "एक मजबूत पासवर्ड तयार करा",
+    "confirmPassword": "पासवर्डची पुष्टी करा",
+    "confirmPasswordPlaceholder": "आपला पासवर्ड पुन्हा प्रविष्ट करा",
+    "officeLocation": "कार्यालय स्थान / झोन",
+    "officeLocationPlaceholder": "कार्यालय स्थान निवडा किंवा प्रविष्ट करा",
+    "preferredLanguage": "पसंतीची भाषा",
+    "signupButton": "खाते तयार करा",
+    "signupButtonLoading": "खाते तयार केले जात आहे...",
+    "loginLink": "आधीपासून खाते आहे? लॉगिन करा",
+    "validation": {
+      "required": "हे फील्ड आवश्यक आहे",
+      "emailInvalid": "कृपया वैध ईमेल पत्ता प्रविष्ट करा",
+      "passwordMismatch": "पासवर्ड जुळत नाहीत",
+      "passwordMinLength": "पासवर्ड किमान 8 वर्णांचा असावा"
+    },
+    "success": "खाते यशस्वीरित्या तयार केले! कृपया लॉगिन करा।",
+    "error": "साइन अप अयशस्वी। कृपया पुन्हा प्रयत्न करा।"
+  },
+  "departments": {
+    "sanitation": "स्वच्छता",
+    "publicWorks": "सार्वजनिक बांधकाम",
+    "streetlights": "रस्ता दिवे",
+    "waterSupply": "पाणी पुरवठा",
+    "wasteManagement": "कचरा व्यवस्थापन",
+    "transportation": "वाहतूक",
+    "planning": "शहरी नियोजन",
+    "safety": "सुरक्षा आणि सुरक्षा"
+  },
+  "languages": {
+    "english": "इंग्रजी",
+    "hindi": "हिंदी",
+    "marathi": "मराठी"
+  }
+}

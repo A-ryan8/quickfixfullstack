@@ -1,0 +1,45 @@
+{
+  "signup": {
+    "title": "Municipal Corporation Admin Signup",
+    "subtitle": "Join the civic management platform",
+    "municipalCorp": "Municipal Corporation Name",
+    "municipalCorpPlaceholder": "Select or enter corporation name",
+    "department": "Department Name",
+    "departmentPlaceholder": "Select department",
+    "email": "Department Email ID",
+    "emailPlaceholder": "Enter department email",
+    "password": "Password",
+    "passwordPlaceholder": "Create a strong password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Re-enter your password",
+    "officeLocation": "Office Location / Zone",
+    "officeLocationPlaceholder": "Select or enter office location",
+    "preferredLanguage": "Preferred Language",
+    "signupButton": "Create Account",
+    "signupButtonLoading": "Creating Account...",
+    "loginLink": "Already have an account? Login",
+    "validation": {
+      "required": "This field is required",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordMismatch": "Passwords do not match",
+      "passwordMinLength": "Password must be at least 8 characters"
+    },
+    "success": "Account created successfully! Please login.",
+    "error": "Sign up failed. Please try again."
+  },
+  "departments": {
+    "sanitation": "Sanitation",
+    "publicWorks": "Public Works",
+    "streetlights": "Streetlights",
+    "waterSupply": "Water Supply",
+    "wasteManagement": "Waste Management",
+    "transportation": "Transportation",
+    "planning": "Urban Planning",
+    "safety": "Safety & Security"
+  },
+  "languages": {
+    "english": "English",
+    "hindi": "Hindi",
+    "marathi": "Marathi"
+  }
+}
