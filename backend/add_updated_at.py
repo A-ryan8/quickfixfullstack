@@ -2,48 +2,44 @@
 """
 Script to add updated_at column to complaints table
 """
+
 import mysql.connector
-from config import DB_CONFIG
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
 
 def add_updated_at_column():
+    """Add updated_at column to complaints table"""
     try:
-        # Connect to database
-        conn = mysql.connector.connect(**DB_CONFIG)
-        cursor = conn.cursor()
+        # Database connection
+        connection = mysql.connector.connect(
+            host=os.getenv('DB_HOST', 'localhost'),
+            user=os.getenv('DB_USER', 'root'),
+            password=os.getenv('DB_PASSWORD', ''),
+            database=os.getenv('DB_NAME', 'civic_complaints')
+        )
         
-        print("Connected to database successfully")
+        cursor = connection.cursor()
         
-        # Add updated_at column
-        cursor.execute("""
-            ALTER TABLE complaints 
-            ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        """)
-        print("Added updated_at column successfully")
+        # Check if updated_at column exists
+        cursor.execute("SHOW COLUMNS FROM complaints LIKE 'updated_at'")
+        result = cursor.fetchone()
         
-        # Update existing records to have updated_at = created_at
-        cursor.execute("""
-            UPDATE complaints 
-            SET updated_at = created_at 
-            WHERE updated_at IS NULL
-        """)
-        print(f"Updated {cursor.rowcount} existing records")
-        
-        # Commit changes
-        conn.commit()
-        print("Changes committed successfully")
-        
-    except mysql.connector.Error as e:
-        if e.errno == 1060:  # Column already exists
-            print("Column 'updated_at' already exists")
+        if result:
+            print("✅ updated_at column already exists")
         else:
-            print(f"Error: {e}")
+            # Add updated_at column
+            cursor.execute("ALTER TABLE complaints ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+            connection.commit()
+            print("✅ updated_at column added successfully")
+        
+        cursor.close()
+        connection.close()
+        
     except Exception as e:
-        print(f"Unexpected error: {e}")
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals() and conn.is_connected():
-            conn.close()
+        print(f"❌ Error adding updated_at column: {e}")
 
 if __name__ == "__main__":
     add_updated_at_column()

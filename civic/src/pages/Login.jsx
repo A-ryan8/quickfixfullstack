@@ -1,28 +1,77 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../firebase'
 import { Mail, Lock, ArrowLeft, Building2, MapPin, Users, BarChart3, Shield } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 import api from '../api'
 
 export default function Login() {
 	const navigate = useNavigate()
+	const { currentUser } = useAuth()
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const [loading, setLoading] = useState(false)
 
+	// Redirect if already authenticated
+	useEffect(() => {
+		if (currentUser) {
+			navigate('/dashboard')
+		}
+	}, [currentUser, navigate])
+
 	const handleSubmit = async (e) => {
 		e.preventDefault()
 		setLoading(true)
+		
 		try {
-			// Placeholder: simulate API if backend not ready
-			const res = await api.post('/auth/login', { email, password }).catch(() => ({ data: { token: 'dev-token' } }))
-			const token = res?.data?.token
-			if (!token) throw new Error('Invalid credentials')
-			localStorage.setItem('token', token)
+			// Use Firebase Authentication
+			const userCredential = await signInWithEmailAndPassword(auth, email, password)
+			const user = userCredential.user
+			
+			// Store user info in localStorage for session management
+			localStorage.setItem('user', JSON.stringify({
+				uid: user.uid,
+				email: user.email,
+				displayName: user.displayName
+			}))
+			
+			// Get Firebase ID token for backend authentication
+			const idToken = await user.getIdToken()
+			localStorage.setItem('token', idToken)
+			
 			toast.success('Logged in successfully')
 			navigate('/dashboard')
-		} catch (err) {
-			toast.error('Login failed')
+		} catch (error) {
+			console.error('Login error:', error)
+			
+			// Handle different Firebase auth errors
+			let errorMessage = 'Login failed'
+			switch (error.code) {
+				case 'auth/user-not-found':
+					errorMessage = 'No account found with this email address'
+					break
+				case 'auth/wrong-password':
+					errorMessage = 'Incorrect password'
+					break
+				case 'auth/invalid-email':
+					errorMessage = 'Invalid email address'
+					break
+				case 'auth/user-disabled':
+					errorMessage = 'This account has been disabled'
+					break
+				case 'auth/too-many-requests':
+					errorMessage = 'Too many failed attempts. Please try again later'
+					break
+				case 'auth/network-request-failed':
+					errorMessage = 'Network error. Please check your connection'
+					break
+				default:
+					errorMessage = error.message || 'Login failed'
+			}
+			
+			toast.error(errorMessage)
 		} finally {
 			setLoading(false)
 		}

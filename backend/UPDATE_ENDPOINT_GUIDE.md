@@ -1,103 +1,84 @@
-# Update Complaint Status - Testing Guide
+# Update Endpoint Guide
 
-## New PUT Endpoint Added ✅
+## Overview
+This guide explains how to update complaint endpoints in the Civic Complaint Management API.
 
-Your FastAPI backend now includes a new endpoint to update complaint statuses:
+## Endpoint Updates
 
-**PUT** `/api/complaints/{complaint_id}` - Update a complaint's status
-
-## How to Test the New Endpoint
-
-### 1. Start Your Server
-```bash
-cd backend
-uvicorn main:app --reload
+### 1. Update Complaint Status
+```
+PUT /api/complaints/{complaint_id}
 ```
 
-### 2. Test Using Interactive Documentation
-1. Visit `http://localhost:8000/docs`
-2. Find the **PUT** `/api/complaints/{complaint_id}` endpoint
-3. Click "Try it out"
-4. Enter a complaint ID (e.g., `1`)
-5. In the request body, enter:
-   ```json
-   {
-     "status": "In Progress"
-   }
-   ```
-6. Click "Execute"
-
-### 3. Test Using curl
-```bash
-# Update complaint ID 1 to "In Progress"
-curl -X PUT "http://localhost:8000/api/complaints/1" \
-     -H "Content-Type: application/json" \
-     -d '{"status": "In Progress"}'
-
-# Update complaint ID 1 to "Resolved"
-curl -X PUT "http://localhost:8000/api/complaints/1" \
-     -H "Content-Type: application/json" \
-     -d '{"status": "Resolved"}'
-```
-
-### 4. Test Using Python Script
-```bash
-python test_api.py
-```
-
-## Expected Responses
-
-### Success Response (200):
+**Request Body:**
 ```json
 {
-  "id": 1,
-  "description": "Pothole on Main Street causing vehicle damage",
-  "location": "123 Main Street, Downtown",
-  "imageUrl": "https://example.com/pothole-image.jpg",
-  "status": "In Progress"
+  "status": "pending|in_progress|resolved"
 }
 ```
 
-### Error Responses:
-- **404**: Complaint not found
-- **500**: Database connection failed or server error
+**Response:**
+```json
+{
+  "message": "Complaint status updated successfully"
+}
+```
 
-## Status Values You Can Use
+### 2. Update Complaint Details
+```
+PUT /api/complaints/{complaint_id}/details
+```
 
-Common status values for testing:
-- `"New"`
-- `"In Progress"`
-- `"Under Review"`
-- `"Resolved"`
-- `"Closed"`
+**Request Body:**
+```json
+{
+  "title": "Updated Title",
+  "description": "Updated Description",
+  "location": "Updated Location"
+}
+```
 
-## Validation Rules
+**Response:**
+```json
+{
+  "id": 1,
+  "title": "Updated Title",
+  "description": "Updated Description",
+  "location": "Updated Location",
+  "status": "pending",
+  "updated_at": "2024-01-15T10:30:00Z"
+}
+```
 
-The status field has these validation rules:
-- **Required**: Must be provided
-- **Length**: 1-50 characters
-- **Type**: String
+## Authentication
+- Admin endpoints require Firebase JWT token with admin role
+- User endpoints require Firebase JWT token
 
-## Database Changes
+## Error Handling
+- 400: Invalid request data
+- 401: Authentication required
+- 403: Admin access required
+- 404: Complaint not found
+- 500: Internal server error
 
-When you update a complaint's status:
-1. The `status` field in the database is updated
-2. The `createdAt` timestamp remains unchanged
-3. All other fields remain unchanged
-4. The updated complaint is returned in the response
+## Examples
 
-## Troubleshooting
+### Update Status (Admin)
+```bash
+curl -X PUT "http://localhost:8000/api/complaints/1" \
+  -H "Authorization: Bearer <admin_jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "resolved"}'
+```
 
-### "Complaint not found" (404)
-- Make sure the complaint ID exists in your database
-- Check that you're using the correct ID number
-
-### "Database connection failed" (500)
-- Ensure your MySQL server is running
-- Check your `.env` file configuration
-- Verify database credentials
-
-### "Failed to update complaint" (500)
-- Check database permissions
-- Ensure the `complaints` table exists
-- Verify the table structure matches the expected schema
+### Update Details (Admin)
+```bash
+curl -X PUT "http://localhost:8000/api/complaints/1/details" \
+  -H "Authorization: Bearer <admin_jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Fixed Pothole",
+    "description": "Pothole has been repaired",
+    "location": "Main Street, Downtown"
+  }'
+```

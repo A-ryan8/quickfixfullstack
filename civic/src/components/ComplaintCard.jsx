@@ -181,19 +181,29 @@ const ComplaintCard = ({ complaint, onStatusChange, onDelete }) => {
                 {/* Content Section */}
                 <Box sx={{ flex: 1, p: 3 }}>
                     <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-                        {/* Header with Status and Date */}
+                        {/* Header with Status, Score and Date */}
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                             <Box>
                                 <Typography variant="caption" color="text.secondary">
                                     Submitted: {new Date(complaint.created_at).toLocaleString()}
                                 </Typography>
                             </Box>
-                            <Chip 
-                                label={complaint.status} 
-                                color={getStatusColor(complaint.status)}
-                                size="small"
-                                sx={{ fontWeight: 600 }}
-                            />
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                {typeof complaint.priority_score !== 'undefined' && complaint.priority_score !== null && (
+                                    <Chip 
+                                        label={`Score: ${complaint.priority_score}`}
+                                        color="secondary"
+                                        size="small"
+                                        sx={{ fontWeight: 700 }}
+                                    />
+                                )}
+                                <Chip 
+                                    label={complaint.status} 
+                                    color={getStatusColor(complaint.status)}
+                                    size="small"
+                                    sx={{ fontWeight: 600 }}
+                                />
+                            </Box>
                         </Box>
 
                         {/* Title */}

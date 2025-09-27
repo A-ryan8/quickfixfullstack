@@ -2,41 +2,44 @@
 """
 Script to add title column to complaints table
 """
+
 import mysql.connector
-from config import DB_CONFIG
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
 
 def add_title_column():
+    """Add title column to complaints table"""
     try:
-        # Connect to MySQL database
-        connection = mysql.connector.connect(**DB_CONFIG)
+        # Database connection
+        connection = mysql.connector.connect(
+            host=os.getenv('DB_HOST', 'localhost'),
+            user=os.getenv('DB_USER', 'root'),
+            password=os.getenv('DB_PASSWORD', ''),
+            database=os.getenv('DB_NAME', 'civic_complaints')
+        )
+        
         cursor = connection.cursor()
         
-        # Add title column
-        cursor.execute("ALTER TABLE complaints ADD COLUMN title VARCHAR(255) DEFAULT NULL")
-        connection.commit()
+        # Check if title column exists
+        cursor.execute("SHOW COLUMNS FROM complaints LIKE 'title'")
+        result = cursor.fetchone()
         
-        print("✅ Successfully added 'title' column to complaints table")
-        
-        # Verify the column was added
-        cursor.execute("DESCRIBE complaints")
-        columns = cursor.fetchall()
-        
-        print("\n📋 Current table structure:")
-        for column in columns:
-            print(f"  - {column[0]}: {column[1]}")
-            
-    except mysql.connector.Error as e:
-        if e.errno == 1060:  # Duplicate column name
-            print("⚠️  Column 'title' already exists in complaints table")
+        if result:
+            print("✅ Title column already exists")
         else:
-            print(f"❌ Error adding title column: {e}")
+            # Add title column
+            cursor.execute("ALTER TABLE complaints ADD COLUMN title VARCHAR(255) NOT NULL DEFAULT ''")
+            connection.commit()
+            print("✅ Title column added successfully")
+        
+        cursor.close()
+        connection.close()
+        
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
-    finally:
-        if 'connection' in locals() and connection.is_connected():
-            cursor.close()
-            connection.close()
+        print(f"❌ Error adding title column: {e}")
 
 if __name__ == "__main__":
     add_title_column()
-

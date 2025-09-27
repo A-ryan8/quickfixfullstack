@@ -1,69 +1,171 @@
-# Database Configuration Explained 📖
+# Database Configuration Explained
 
-## How Our Python Application Knows About the Database
+## Overview
+This document explains the database configuration for the Civic Complaint Management API.
 
-You're absolutely right! Our Python application knows about the database through a specific "address book" system. Here's exactly how it works:
+## Database Schema
 
-## 1. The "Address Book" - The .env File 📖
+### Complaints Table
+```sql
+CREATE TABLE complaints (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    status ENUM('pending', 'in_progress', 'resolved') DEFAULT 'pending',
+    priority_score FLOAT DEFAULT 0.0,
+    upvote_count INT DEFAULT 0,
+    image_url VARCHAR(500),
+    pdf_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
 
-The most important file is the `.env` file in the backend folder. This file acts as a secure place where we write down the exact address and login details for our database.
+### Upvotes Table
+```sql
+CREATE TABLE upvotes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    complaint_id INT NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_complaint (complaint_id, user_id)
+);
+```
 
-**What we place inside `backend/.env`:**
+## Environment Variables
 
+### Database Configuration
 ```env
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=civic_db
-DB_PORT=3306
+DB_PASSWORD=your-password
+DB_NAME=civic_complaints
 ```
 
-**Explanation of each line:**
-- `DB_HOST=localhost`: Tells the application that the database server is running on the same computer
-- `DB_NAME=civic_db`: **This is the direct answer** - we explicitly tell the application that the database name is `civic_db`
-- `DB_USER=root`: The MySQL username
-- `DB_PASSWORD=your_mysql_password`: The MySQL password
-- `DB_PORT=3306`: The port MySQL is running on
-
-## 2. The "Code that Reads the Address Book" - The config.py File 🧑‍💻
-
-The `.env` file just stores the information. The code that actually reads this information is in `backend/config.py`:
-
+### Connection Pool Settings
 ```python
-# This line loads all the variables from your .env file
-load_dotenv()
-
-# This code block uses the loaded variables to connect
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST'),      # Reads 'localhost' from .env
-    'user': os.getenv('DB_USER'),      # Reads 'root' from .env
-    'password': os.getenv('DB_PASSWORD'), # Reads your password from .env
-    'database': os.getenv('DB_NAME')   # Reads 'civic_db' from .env
-}
+# Database connection pool configuration
+engine = create_engine(
+    DATABASE_URL,
+    pool_size=10,
+    max_overflow=20,
+    pool_pre_ping=True,
+    pool_recycle=3600
+)
 ```
 
-The `os.getenv("DB_NAME")` function is what fetches the name `civic_db` from the `.env` file and passes it to the MySQL connection function.
+## Database Setup
 
-## 3. The "Connection Manager" - The database.py File 🔌
+### 1. Create Database
+```sql
+CREATE DATABASE civic_complaints;
+```
 
-Finally, `backend/database.py` uses this configuration to actually connect to MySQL:
+### 2. Create Tables
+```sql
+-- Run the schema files in order:
+-- 1. complaints_table.sql
+-- 2. upvotes_table.sql
+-- 3. indexes.sql
+```
 
+### 3. Insert Sample Data
+```sql
+INSERT INTO complaints (title, description, location, status) VALUES
+('Pothole on Main Street', 'Large pothole causing traffic issues', 'Main Street, Downtown', 'pending'),
+('Broken Streetlight', 'Streetlight not working at night', 'Oak Avenue, Residential', 'in_progress'),
+('Garbage Collection Issue', 'Garbage not collected for 3 days', 'Pine Street, Commercial', 'resolved');
+```
+
+## Connection Management
+
+### Connection Pool
+- **Pool Size**: 10 connections
+- **Max Overflow**: 20 additional connections
+- **Pre-ping**: Enabled to check connection health
+- **Recycle**: Connections recycled every hour
+
+### Session Management
 ```python
-def get_db_connection():
-    db_connection = mysql.connector.connect(**DB_CONFIG)
-    # This connects using all the values from DB_CONFIG
+# Get database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 ```
 
-## Summary: The Complete Flow 🔄
+## Performance Optimization
 
-1. **`.env` file** stores: `DB_NAME=civic_db`
-2. **`config.py`** reads: `os.getenv('DB_NAME')` → `'civic_db'`
-3. **`database.py`** connects: `mysql.connector.connect(database='civic_db')`
+### Indexes
+```sql
+-- Index on status for filtering
+CREATE INDEX idx_complaints_status ON complaints(status);
 
-This is why our Python application knows to connect to the `civic_db` database - it's explicitly defined in our "address book" (`.env` file) and read by our configuration code!
+-- Index on priority_score for sorting
+CREATE INDEX idx_complaints_priority ON complaints(priority_score DESC);
 
-## Security Note 🔒
+-- Index on created_at for time-based queries
+CREATE INDEX idx_complaints_created_at ON complaints(created_at);
 
-The `.env` file contains sensitive information (like passwords) and should never be committed to version control. That's why we have:
-- `env_template.txt` - A template without real credentials
-- `.env` - The actual file with real credentials (gitignored)
+-- Composite index for upvotes
+CREATE INDEX idx_upvotes_complaint_user ON upvotes(complaint_id, user_id);
+```
+
+### Query Optimization
+- Use `LIMIT` and `OFFSET` for pagination
+- Use `ORDER BY` with indexed columns
+- Use `WHERE` clauses with indexed columns
+- Avoid `SELECT *` - specify required columns
+
+## Backup and Recovery
+
+### Backup
+```bash
+mysqldump -u root -p civic_complaints > backup.sql
+```
+
+### Restore
+```bash
+mysql -u root -p civic_complaints < backup.sql
+```
+
+## Monitoring
+
+### Connection Monitoring
+```python
+# Check connection pool status
+engine.pool.status()
+```
+
+### Query Performance
+```sql
+-- Enable slow query log
+SET GLOBAL slow_query_log = 'ON';
+SET GLOBAL long_query_time = 2;
+```
+
+## Troubleshooting
+
+### Common Issues
+1. **Connection Timeout**: Increase `pool_recycle` value
+2. **Too Many Connections**: Reduce `pool_size` or increase `max_overflow`
+3. **Slow Queries**: Add appropriate indexes
+4. **Memory Issues**: Optimize query results with `LIMIT`
+
+### Health Checks
+```python
+# Test database connection
+def test_connection():
+    try:
+        db = SessionLocal()
+        db.execute("SELECT 1")
+        db.close()
+        return True
+    except Exception as e:
+        print(f"Database connection failed: {e}")
+        return False
+```

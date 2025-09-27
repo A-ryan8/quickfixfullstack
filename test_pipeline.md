@@ -1,137 +1,242 @@
-# Full-Stack Message Pipeline Test Guide
+# Test Pipeline Documentation
 
-This guide will help you test the complete data pipeline between the Flutter app, backend server, and React website.
+## Overview
+This document describes the testing pipeline for the Civic Complaint Management API.
 
-## Prerequisites
+## Test Categories
 
-Make sure you have the following installed:
-- Node.js (for backend and React)
-- Flutter SDK (for Flutter app)
-- A web browser
+### 1. Unit Tests
+- **Purpose**: Test individual functions and methods
+- **Coverage**: Database operations, API endpoints, business logic
+- **Tools**: pytest, unittest
 
-## Step 1: Start the Backend Server
+### 2. Integration Tests
+- **Purpose**: Test interaction between components
+- **Coverage**: Database connections, API endpoints, external services
+- **Tools**: pytest, requests
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
+### 3. End-to-End Tests
+- **Purpose**: Test complete user workflows
+- **Coverage**: Full application flow from frontend to backend
+- **Tools**: Selenium, Playwright
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+## Test Structure
 
-3. Start the server:
-   ```bash
-   npm start
-   ```
+```
+tests/
+├── unit/
+│   ├── test_database.py
+│   ├── test_models.py
+│   ├── test_prioritization.py
+│   └── test_security.py
+├── integration/
+│   ├── test_api_endpoints.py
+│   ├── test_database_integration.py
+│   └── test_firebase_integration.py
+├── e2e/
+│   ├── test_complaint_workflow.py
+│   ├── test_admin_workflow.py
+│   └── test_user_workflow.py
+└── fixtures/
+    ├── sample_complaints.json
+    ├── test_users.json
+    └── mock_responses.json
+```
 
-   You should see: `Backend server is running at http://localhost:3000`
+## Test Data
 
-## Step 2: Start the React Website
+### Sample Complaints
+```json
+{
+  "complaints": [
+    {
+      "id": 1,
+      "title": "Pothole on Main Street",
+      "description": "Large pothole causing traffic issues",
+      "location": "Main Street, Downtown",
+      "status": "pending",
+      "upvote_count": 15,
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
 
-1. Open a new terminal and navigate to the civic directory:
-   ```bash
-   cd civic
-   ```
+### Test Users
+```json
+{
+  "users": [
+    {
+      "email": "admin@test.com",
+      "role": "admin",
+      "uid": "admin_uid_123"
+    },
+    {
+      "email": "user@test.com",
+      "role": "user",
+      "uid": "user_uid_456"
+    }
+  ]
+}
+```
 
-2. Install dependencies (if not already done):
-   ```bash
-   npm install
-   ```
+## Test Execution
 
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
+### Local Testing
+```bash
+# Run all tests
+pytest
 
-   The React app should be available at `http://localhost:5173` (or similar port)
+# Run specific test category
+pytest tests/unit/
+pytest tests/integration/
+pytest tests/e2e/
 
-4. Navigate to the Messages page in the React app (you may need to login first)
+# Run with coverage
+pytest --cov=backend --cov-report=html
+```
 
-## Step 3: Start the Flutter App
+### CI/CD Pipeline
+```yaml
+# .github/workflows/test.yml
+name: Test Pipeline
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: pytest
+      - name: Upload coverage
+        uses: codecov/codecov-action@v1
+```
 
-1. Open a new terminal and navigate to the flutter_app directory:
-   ```bash
-   cd flutter_app
-   ```
+## Test Scenarios
 
-2. Get Flutter dependencies:
-   ```bash
-   flutter pub get
-   ```
+### 1. Complaint Management
+- Create complaint
+- Update complaint status
+- Delete complaint
+- Get complaint details
+- List complaints with pagination
 
-3. Run the Flutter app:
-   ```bash
-   flutter run
-   ```
+### 2. User Authentication
+- Login with valid credentials
+- Login with invalid credentials
+- Token validation
+- Role-based access control
 
-## Step 4: Test the Pipeline
+### 3. Prioritization Algorithm
+- Calculate priority scores
+- Sort complaints by priority
+- Handle edge cases (no upvotes, old complaints)
 
-1. In the Flutter app, navigate to the Messages tab (should be the 4th tab in the bottom navigation)
-2. Enter a test message like "Hello from Flutter app!"
-3. Tap "Send Message"
-4. You should see a success message in the Flutter app
-5. Switch to the React website and navigate to the Messages page
-6. You should see your message appear there within 5 seconds (auto-refresh)
+### 4. File Upload
+- Upload image files
+- Upload PDF files
+- Handle invalid file types
+- Handle large files
 
-## Expected Behavior
+## Performance Tests
 
-- ✅ Flutter app can send messages to backend
-- ✅ Backend stores messages in memory
-- ✅ React website displays messages in real-time
-- ✅ Messages include timestamp
-- ✅ Auto-refresh every 5 seconds in React app
+### Load Testing
+```bash
+# Using Apache Bench
+ab -n 1000 -c 10 http://localhost:8000/api/complaints/public
+
+# Using wrk
+wrk -t12 -c400 -d30s http://localhost:8000/api/complaints/public
+```
+
+### Stress Testing
+- High concurrent requests
+- Large file uploads
+- Database connection limits
+- Memory usage monitoring
+
+## Test Reports
+
+### Coverage Report
+- HTML coverage report generated in `htmlcov/`
+- Minimum coverage threshold: 80%
+- Exclude test files and configuration files
+
+### Performance Report
+- Response time metrics
+- Throughput measurements
+- Resource usage statistics
+- Error rate analysis
+
+## Continuous Integration
+
+### Pre-commit Hooks
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install hooks
+pre-commit install
+
+# Run hooks
+pre-commit run --all-files
+```
+
+### Automated Testing
+- Run tests on every commit
+- Run tests on pull requests
+- Deploy to staging on successful tests
+- Deploy to production on main branch
+
+## Test Environment
+
+### Database
+- Use test database for integration tests
+- Reset database state between tests
+- Use transactions for test isolation
+
+### External Services
+- Mock Firebase authentication
+- Mock Gemini AI API
+- Use test API keys
+
+### Configuration
+```env
+# Test environment variables
+TEST_DB_HOST=localhost
+TEST_DB_NAME=civic_complaints_test
+TEST_FIREBASE_PROJECT_ID=test-project
+TEST_GEMINI_API_KEY=test-key
+```
 
 ## Troubleshooting
 
-### Backend Issues
-- Make sure port 3000 is not in use by another application
-- Check that all dependencies are installed with `npm install`
+### Common Issues
+1. **Database Connection**: Ensure test database is running
+2. **Firebase Auth**: Check test project configuration
+3. **File Permissions**: Ensure test files are writable
+4. **Port Conflicts**: Use different ports for test server
 
-### Flutter Issues
-- Ensure Flutter SDK is properly installed
-- Run `flutter doctor` to check for issues
-- **IMPORTANT**: Flutter apps cannot access `localhost` from devices/emulators
-- Use your computer's IP address instead: `http://10.30.243.189:3000`
+### Debug Mode
+```bash
+# Run tests with verbose output
+pytest -v -s
 
-### React Issues
-- Check that the development server is running
-- Ensure you're accessing the correct port
-- Check browser console for any CORS errors
-
-### Network Issues
-- **SOLUTION**: The Flutter app and React app are configured to use IP address `10.30.243.189:3000`
-- If your IP address changes, update both:
-  - `flutter_app/lib/services/message_service.dart` (line 5)
-  - `civic/src/pages/Messages.jsx` (line 15)
-- Make sure all three services are running simultaneously
-
-## API Endpoints
-
-The backend provides these endpoints:
-- `GET /api/messages` - Retrieve all messages
-- `POST /api/messages` - Send a new message
-
-## File Structure
-
+# Run specific test with debug
+pytest tests/unit/test_database.py::test_create_complaint -v -s
 ```
-├── backend/
-│   ├── server.js          # Express server with message API
-│   └── package.json       # Backend dependencies
-├── flutter_app/
-│   ├── lib/
-│   │   ├── services/
-│   │   │   └── message_service.dart  # HTTP client for backend
-│   │   ├── message_screen.dart      # UI for sending messages
-│   │   └── instagram_navigation.dart # Updated navigation
-│   └── pubspec.yaml       # Flutter dependencies
-└── civic/
-    ├── src/
-    │   ├── pages/
-    │   │   └── Messages.jsx         # React page for displaying messages
-    │   ├── components/
-    │   │   └── Sidebar.jsx          # Updated navigation
-    │   └── App.jsx                  # Updated routing
-    └── package.json       # React dependencies
-```
+
+## Best Practices
+
+1. **Test Isolation**: Each test should be independent
+2. **Cleanup**: Clean up test data after each test
+3. **Mocking**: Mock external dependencies
+4. **Assertions**: Use specific assertions
+5. **Documentation**: Document test scenarios
+6. **Maintenance**: Keep tests up to date with code changes

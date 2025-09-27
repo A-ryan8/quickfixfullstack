@@ -2,26 +2,42 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { Globe, ChevronDown, User, LogOut } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
-export default function Navbar() {
+export default function Navbar({ onLogout }) {
 	const navigate = useNavigate()
+	const { currentUser } = useAuth()
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 	const dropdownRef = useRef(null)
 	
-	// Get department info from localStorage or use default
-	const departmentInfo = {
-		name: localStorage.getItem('department') || 'Sanitation Department',
-		email: localStorage.getItem('email') || 'sanitation@mumbai.gov.in',
-		initials: localStorage.getItem('department')?.split(' ').map(word => word[0]).join('') || 'SD'
+	// Get user info from Firebase or localStorage
+	const userInfo = {
+		name: currentUser?.displayName || localStorage.getItem('department') || 'Admin User',
+		email: currentUser?.email || localStorage.getItem('email') || 'admin@city.gov',
+		initials: currentUser?.displayName?.split(' ').map(word => word[0]).join('') || 
+		         localStorage.getItem('department')?.split(' ').map(word => word[0]).join('') || 
+		         'AU'
 	}
 
-	const handleLogout = () => {
-		localStorage.removeItem('token')
-		localStorage.removeItem('department')
-		localStorage.removeItem('email')
-		toast.success('Logged out')
-		navigate('/login')
-		setIsDropdownOpen(false)
+	const handleLogout = async () => {
+		try {
+			if (onLogout) {
+				await onLogout()
+			} else {
+				// Fallback to manual logout
+				localStorage.removeItem('token')
+				localStorage.removeItem('user')
+				localStorage.removeItem('department')
+				localStorage.removeItem('email')
+			}
+			toast.success('Logged out successfully')
+			navigate('/login')
+		} catch (error) {
+			console.error('Logout error:', error)
+			toast.error('Error during logout')
+		} finally {
+			setIsDropdownOpen(false)
+		}
 	}
 
 	const handleProfile = () => {
@@ -67,11 +83,11 @@ export default function Navbar() {
 						className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
 					>
 						<div className="text-right">
-							<div className="text-sm font-medium text-gray-900">{departmentInfo.name}</div>
-							<div className="text-xs text-gray-500">{departmentInfo.email}</div>
+							<div className="text-sm font-medium text-gray-900">{userInfo.name}</div>
+							<div className="text-xs text-gray-500">{userInfo.email}</div>
 						</div>
 						<div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-							{departmentInfo.initials}
+							{userInfo.initials}
 						</div>
 						<ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
 					</button>

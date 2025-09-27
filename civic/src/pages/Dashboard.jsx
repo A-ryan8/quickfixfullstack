@@ -56,15 +56,27 @@ const Dashboard = () => {
 
     const handleDeleteComplaint = async (id) => {
         try {
-            console.log(`Deleting complaint ${id}`);
+            console.log(`🗑️ Deleting complaint ${id}`);
+            
+            // Check if user is authenticated
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error('❌ No authentication token found');
+                setError('You must be logged in to delete complaints');
+                return;
+            }
+            
+            console.log('🔐 Authentication token found:', token.substring(0, 20) + '...');
+            
             await deleteComplaint(id);
-            console.log(`Successfully deleted complaint ${id}`);
+            console.log(`✅ Successfully deleted complaint ${id}`);
             
             // Refresh the list to show the updated data
             await loadComplaints();
-            console.log("Complaints list refreshed after deletion");
+            console.log("📋 Complaints list refreshed after deletion");
         } catch (error) {
-            console.error("Failed to delete complaint:", error);
+            console.error("❌ Failed to delete complaint:", error);
+            console.error("Error details:", error.response?.data);
             setError(`Failed to delete complaint: ${error.response?.data?.detail || error.message}`);
         }
     };
