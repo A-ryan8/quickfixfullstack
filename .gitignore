@@ -104,3 +104,15 @@ backendzip.zip
 .metadata
 .vscode/
 package-lock.json
+
+# SECURITY: API Keys and sensitive files
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase_options.dart
+**/firebase.js
+**/api_service.dart
+.env
+.env.local
+.env.production
+config.json
+secrets.json
