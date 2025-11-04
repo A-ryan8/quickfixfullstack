@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'l10n/app_localizations.dart';
 import 'firebase_options.dart';
 import 'upload_complaint_screen.dart';
 import 'instagram_navigation.dart';
 import 'widgets/auth_gate.dart';
+import 'providers/locale_provider.dart';
 
 void main() async {
   // Initialize Firebase
@@ -166,16 +169,25 @@ class CivicApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'AI Civic Problem Resolver',
-      theme: civicTheme,
-      debugShowCheckedModeBanner: false,
-      home: const AuthGate(),
-      navigatorKey: navigatorKey,
-      routes: {
-        '/user': (context) => const UserDashboard(),
-        '/upload': (context) => const UploadComplaintScreen(),
-        '/main': (context) => const InstagramStyleNavigation(),
+    return ChangeNotifierProvider(
+      create: (context) => LocaleProvider(),
+      builder: (context, child) {
+        final provider = Provider.of<LocaleProvider>(context);
+        return MaterialApp(
+          title: 'AI Civic Problem Resolver',
+          theme: civicTheme,
+          debugShowCheckedModeBanner: false,
+          locale: provider.locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const AuthGate(),
+          navigatorKey: navigatorKey,
+          routes: {
+            '/user': (context) => const UserDashboard(),
+            '/upload': (context) => const UploadComplaintScreen(),
+            '/main': (context) => const InstagramStyleNavigation(),
+          },
+        );
       },
     );
   }

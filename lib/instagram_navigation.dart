@@ -408,7 +408,7 @@ class _InstagramIssuePostCardState extends State<_InstagramIssuePostCard>
     try {
       // Try different API base URLs
       final bases = <String>[
-        'http://10.30.243.189:8000',
+        'http://10.45.233.189:8000',
         'http://10.0.2.2:8000',
         'http://localhost:8000',
         'http://127.0.0.1:8000',

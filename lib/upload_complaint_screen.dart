@@ -15,8 +15,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:open_file/open_file.dart';
+import 'package:provider/provider.dart';
+import 'l10n/app_localizations.dart';
 import 'services/api_service.dart';
 import 'services/pdf_service.dart';
+import 'providers/locale_provider.dart';
 
 class UploadComplaintScreen extends StatefulWidget {
   const UploadComplaintScreen({super.key});
@@ -132,8 +135,9 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
     final status = await Permission.camera.request();
     if (status.isGranted) return true;
     if (status.isPermanentlyDenied) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Camera permission permanently denied. Please enable it in Settings.')),
+        SnackBar(content: Text(l10n.cameraPermissionDenied)),
       );
     }
     return false;
@@ -194,7 +198,8 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
     try {
       final has = await Geolocator.isLocationServiceEnabled();
       if (!has) {
-        setState(() => _locationString = 'Location services disabled');
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _locationString = l10n.locationServicesDisabled);
         return;
       }
       
@@ -229,16 +234,23 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
         }
       } catch (_) {}
     } catch (e) {
-      setState(() => _locationString = 'Unable to get location');
+      final l10n = AppLocalizations.of(context)!;
+      setState(() => _locationString = l10n.unableToGetLocation);
     }
   }
 
   Future<void> _generateDescription() async {
     setState(() => _isGeneratingDescription = true);
+    
+    // Get current language from provider
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final currentLanguage = localeProvider.languageCode;
+    
     try {
       if (_media == null) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please capture or select a photo first.')),
+          SnackBar(content: Text(l10n.pleaseCapturePhotoFirst)),
         );
         return;
       }
@@ -246,6 +258,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
       final aiResponse = await ApiService.analyzeImageWithGemini(
         imageFile: File(_media!.path),
         locationContext: _address ?? _locationString,
+        language: currentLanguage,
       );
       
       if (aiResponse != null) {
@@ -256,36 +269,62 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
       } else {
         _desc.text = _buildLocalAIFallback();
         setState(() {
-          _aiGeneratedTitle = 'Municipal Issue';
+          _aiGeneratedTitle = _getLocalizedTitle(currentLanguage);
         });
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to generate description. Please try again.')),
+          SnackBar(content: Text(l10n.failedToGenerateDescription)),
         );
       }
     } catch (e) {
       _desc.text = _buildLocalAIFallback();
       setState(() {
-        _aiGeneratedTitle = 'Municipal Issue';
+        _aiGeneratedTitle = _getLocalizedTitle(currentLanguage);
       });
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('AI error: $e')),
+        SnackBar(content: Text('${l10n.aiError} $e')),
       );
     } finally {
       if (mounted) setState(() => _isGeneratingDescription = false);
     }
   }
 
+  String _getLocalizedTitle(String languageCode) {
+    switch (languageCode) {
+      case 'hi':
+        return 'नगरपालिका समस्या';
+      case 'mr':
+        return 'नगरपालिका समस्या';
+      case 'en':
+      default:
+        return 'Municipal Issue';
+    }
+  }
+
   String _buildLocalAIFallback() {
     final address = _address ?? _locationString;
-    return 'Issue reported near $address. The attached photo indicates a municipal problem that may affect public safety '
-        'or infrastructure. Please review and take appropriate action.';
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final currentLanguage = localeProvider.languageCode;
+    
+    switch (currentLanguage) {
+      case 'hi':
+        return '$address के पास समस्या की रिपोर्ट। संलग्न फोटो एक नगरपालिका समस्या को इंगित करता है जो सार्वजनिक सुरक्षा या बुनियादी ढांचे को प्रभावित कर सकती है। कृपया समीक्षा करें और उचित कार्रवाई करें।';
+      case 'mr':
+        return '$address जवळ समस्या अहवाल दिला. संलग्न फोटो एक नगरपालिका समस्या दर्शवतो जी सार्वजनिक सुरक्षा किंवा पायाभूत सुविधांना प्रभावित करू शकते. कृपया समीक्षा करा आणि योग्य कारवाई करा.';
+      case 'en':
+      default:
+        return 'Issue reported near $address. The attached photo indicates a municipal problem that may affect public safety '
+            'or infrastructure. Please review and take appropriate action.';
+    }
   }
 
   Future<void> _generatePDF() async {
     if (_isUploading) return;
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isUploading = true;
-      _status = 'Uploading complaint...';
+      _status = l10n.uploadingComplaint;
     });
 
     try {
@@ -333,7 +372,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
       await tempFile.writeAsBytes(pdfBytes);
 
       List<String> urls = [
-        'http://10.30.243.189:8000/api/complaints/submit',
+        'http://10.45.233.189:8000/api/complaints/submit',
         'http://10.0.2.2:8000/api/complaints/submit',
         'http://localhost:8000/api/complaints/submit',
         'http://127.0.0.1:8000/api/complaints/submit',
@@ -377,17 +416,17 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
       }
 
       if (response!.statusCode == 200 || response!.statusCode == 201) {
-        setState(() => _status = 'Complaint submitted successfully!');
+        setState(() => _status = l10n.complaintSubmittedSuccessfully);
 
         if (mounted) {
           await OpenFile.open(tempFile.path);
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Complaint submitted and PDF generated successfully!'),
+              content: Text(l10n.complaintSubmittedPdfGenerated),
               duration: const Duration(seconds: 4),
               action: SnackBarAction(
-                label: 'Download PDF',
+                label: l10n.downloadPdf,
                 onPressed: () async {
                   try {
                     final docs = await getApplicationDocumentsDirectory();
@@ -395,12 +434,12 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                     await tempFile.copy(downloadPath);
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('PDF saved to: $downloadPath')),
+                      SnackBar(content: Text('${l10n.pdfSavedTo} $downloadPath')),
                     );
                   } catch (e) {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Download failed: $e')),
+                      SnackBar(content: Text('${l10n.downloadFailed} $e')),
                     );
                   }
                 },
@@ -409,18 +448,18 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
           );
         }
       } else {
-        setState(() => _status = 'Error: Failed to submit. Status code: ${response!.statusCode}');
+        setState(() => _status = '${l10n.errorFailedSubmit} ${response!.statusCode}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: Failed to submit complaint. Status: ${response!.statusCode}')),
+            SnackBar(content: Text('${l10n.errorFailedSubmit} ${response!.statusCode}')),
           );
         }
       }
     } catch (e) {
-      setState(() => _status = 'Error: Could not connect to the server.');
+      setState(() => _status = l10n.errorCouldNotConnect);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: Could not connect to the server. $e')),
+          SnackBar(content: Text('${l10n.errorCouldNotConnect} $e')),
         );
       }
     } finally {
@@ -438,12 +477,13 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'Report Issue',
-          style: TextStyle(
+        title: Text(
+          l10n.reportIssue,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -457,6 +497,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          _buildLanguageSwitcher(),
           IconButton(
             icon: const Icon(Icons.help_outline, size: 24),
             onPressed: () {
@@ -517,6 +558,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
   }
 
   Widget _buildHeaderSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -552,22 +594,22 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                 ),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Report Municipal Issue',
-                      style: TextStyle(
+                      l10n.reportMunicipalIssue,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Help improve your community',
-                      style: TextStyle(
+                      l10n.helpImproveCommunity,
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
                       ),
@@ -583,6 +625,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
   }
 
   Widget _buildMediaSelectionSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -615,9 +658,9 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Add Photo/Video',
-                  style: TextStyle(
+                Text(
+                  l10n.addPhotoVideo,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1E293B),
@@ -634,6 +677,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
   }
 
   Widget _buildMediaPreview() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         Container(
@@ -663,7 +707,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
             Expanded(
               child: _buildActionButton(
                 icon: Icons.camera_alt,
-                label: 'Camera',
+                label: l10n.camera,
                 onPressed: _pickFromCamera,
                 color: const Color(0xFF3B82F6),
               ),
@@ -672,7 +716,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
             Expanded(
               child: _buildActionButton(
                 icon: Icons.photo_library,
-                label: 'Gallery',
+                label: l10n.gallery,
                 onPressed: _pickFromGallery,
                 color: const Color(0xFF10B981),
               ),
@@ -680,7 +724,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
             const SizedBox(width: 12),
             _buildActionButton(
               icon: Icons.delete,
-              label: 'Remove',
+              label: l10n.remove,
               onPressed: _removeMedia,
               color: const Color(0xFFEF4444),
               isCompact: true,
@@ -692,13 +736,14 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
   }
 
   Widget _buildMediaSelectionButtons() {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         Expanded(
           child: _buildMediaSelectionCard(
             icon: Icons.camera_alt,
-            title: 'Camera',
-            subtitle: 'Take a photo',
+            title: l10n.camera,
+            subtitle: l10n.takePhoto,
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -711,8 +756,8 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
         Expanded(
           child: _buildMediaSelectionCard(
             icon: Icons.photo_library,
-            title: 'Gallery',
-            subtitle: 'Choose existing',
+            title: l10n.gallery,
+            subtitle: l10n.chooseExisting,
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -774,6 +819,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
   }
 
   Widget _buildDescriptionSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -806,9 +852,9 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Description',
-                  style: TextStyle(
+                Text(
+                  l10n.description,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1E293B),
@@ -839,9 +885,9 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                       children: [
                         const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF8B5CF6)),
                         const SizedBox(width: 8),
-                        const Text(
-                          'AI Generated Title:',
-                          style: TextStyle(
+                        Text(
+                          l10n.aiGeneratedTitle,
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF8B5CF6),
@@ -876,10 +922,10 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                   TextField(
                     controller: _desc,
                     maxLines: 6,
-                    decoration: const InputDecoration(
-                      hintText: 'Describe the issue in detail...',
+                    decoration: InputDecoration(
+                      hintText: l10n.describeIssueDetail,
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(20),
+                      contentPadding: const EdgeInsets.all(20),
                     ),
                     style: const TextStyle(fontSize: 16),
                   ),
@@ -890,14 +936,16 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                         _buildAutoGenerateButton(),
                         const Spacer(),
                         _buildActionIcon(Icons.mic, () {
+                          final l10n = AppLocalizations.of(context)!;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Voice recording feature coming soon!')),
+                            SnackBar(content: Text(l10n.voiceRecordingComingSoon)),
                           );
                         }),
                         const SizedBox(width: 8),
                         _buildActionIcon(Icons.send, () {
+                          final l10n = AppLocalizations.of(context)!;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Send functionality coming soon!')),
+                            SnackBar(content: Text(l10n.sendFunctionalityComingSoon)),
                           );
                         }),
                       ],
@@ -913,6 +961,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
   }
 
   Widget _buildAutoGenerateButton() {
+    final l10n = AppLocalizations.of(context)!;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHoveringAutoGenerate = true),
       onExit: (_) => setState(() => _isHoveringAutoGenerate = false),
@@ -968,7 +1017,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                   const Icon(Icons.auto_awesome, size: 16),
                 const SizedBox(width: 6),
                 Text(
-                  _isGeneratingDescription ? 'Generating...' : 'Auto Generate',
+                  _isGeneratingDescription ? l10n.generating : l10n.autoGenerate,
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -1001,6 +1050,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
   }
 
   Widget _buildLocationSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1033,9 +1083,9 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Location',
-                  style: TextStyle(
+                Text(
+                  l10n.location,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1E293B),
@@ -1066,7 +1116,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                   IconButton(
                     onPressed: _getCurrentLocation,
                     icon: const Icon(Icons.refresh, size: 20, color: Color(0xFF10B981)),
-                    tooltip: 'Refresh location',
+                    tooltip: l10n.refreshLocation,
                   ),
                 ],
               ),
@@ -1077,8 +1127,8 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
             TextField(
               controller: _locationManual,
               decoration: InputDecoration(
-                labelText: 'Manual Location (Optional)',
-                hintText: 'Enter specific address or landmark...',
+                labelText: l10n.manualLocation,
+                hintText: l10n.enterSpecificAddress,
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
                 border: OutlineInputBorder(
@@ -1103,6 +1153,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
   }
 
   Widget _buildSubmitButton() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       height: 56,
@@ -1140,12 +1191,12 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                   Text(_status, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               )
-            : const Row(
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.send, size: 24),
-                  SizedBox(width: 8),
-                  Text('Submit Complaint', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Icon(Icons.send, size: 24),
+                  const SizedBox(width: 8),
+                  Text(l10n.submitComplaintButton, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
       ),
@@ -1182,14 +1233,15 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
   }
 
   Widget _buildProcessingOverlay() {
+    final l10n = AppLocalizations.of(context)!;
     return Positioned.fill(
       child: Container(
         color: Colors.black.withOpacity(0.5),
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 48,
                 height: 48,
                 child: CircularProgressIndicator(
@@ -1197,10 +1249,10 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
-                'Processing...',
-                style: TextStyle(
+                l10n.processing,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -1214,6 +1266,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
   }
 
   Widget _buildPermissionsOverlay() {
+    final l10n = AppLocalizations.of(context)!;
     return Positioned.fill(
       child: Container(
         color: Colors.black.withOpacity(0.5),
@@ -1248,19 +1301,19 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Permissions Required',
-                  style: TextStyle(
+                Text(
+                  l10n.permissionsRequired,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1E293B),
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Camera and location permissions are needed to upload complaints.',
+                Text(
+                  l10n.cameraLocationPermissionsNeeded,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Color(0xFF64748B),
                   ),
@@ -1278,9 +1331,9 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(color: Color(0xFF64748B)),
+                        child: Text(
+                          l10n.cancel,
+                          style: const TextStyle(color: Color(0xFF64748B)),
                         ),
                       ),
                     ),
@@ -1299,7 +1352,7 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text('Open Settings'),
+                        child: Text(l10n.openSettings),
                       ),
                     ),
                   ],
@@ -1312,34 +1365,81 @@ class _UploadComplaintScreenState extends State<UploadComplaintScreen>
     );
   }
 
+  Widget _buildLanguageSwitcher() {
+    return Consumer<LocaleProvider>(
+      builder: (context, localeProvider, child) {
+        return PopupMenuButton<String>(
+          icon: const Icon(Icons.language, size: 24),
+          tooltip: 'Change Language',
+          onSelected: (String languageCode) {
+            localeProvider.setLocale(Locale(languageCode));
+          },
+          itemBuilder: (BuildContext context) => [
+            PopupMenuItem<String>(
+              value: 'en',
+              child: Row(
+                children: [
+                  const Icon(Icons.language, size: 16),
+                  const SizedBox(width: 8),
+                  Text(localeProvider.languageCode == 'en' ? 'English ✓' : 'English'),
+                ],
+              ),
+            ),
+            PopupMenuItem<String>(
+              value: 'hi',
+              child: Row(
+                children: [
+                  const Icon(Icons.language, size: 16),
+                  const SizedBox(width: 8),
+                  Text(localeProvider.languageCode == 'hi' ? 'हिंदी ✓' : 'हिंदी'),
+                ],
+              ),
+            ),
+            PopupMenuItem<String>(
+              value: 'mr',
+              child: Row(
+                children: [
+                  const Icon(Icons.language, size: 16),
+                  const SizedBox(width: 8),
+                  Text(localeProvider.languageCode == 'mr' ? 'मराठी ✓' : 'मराठी'),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showHelpDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('How to Report an Issue'),
-        content: const Column(
+        title: Text(l10n.howToReportIssue),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('1. Take a clear photo of the issue'),
-            SizedBox(height: 8),
-            Text('2. Add a detailed description'),
-            SizedBox(height: 8),
-            Text('3. Verify your location'),
-            SizedBox(height: 8),
-            Text('4. Submit the complaint'),
-            SizedBox(height: 16),
+            Text(l10n.step1),
+            const SizedBox(height: 8),
+            Text(l10n.step2),
+            const SizedBox(height: 8),
+            Text(l10n.step3),
+            const SizedBox(height: 8),
+            Text(l10n.step4),
+            const SizedBox(height: 16),
             Text(
-              'Your report will be automatically forwarded to the appropriate municipal department.',
-              style: TextStyle(fontStyle: FontStyle.italic),
+              l10n.reportForwarded,
+              style: const TextStyle(fontStyle: FontStyle.italic),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Got it'),
+            child: Text(l10n.gotIt),
           ),
         ],
       ),

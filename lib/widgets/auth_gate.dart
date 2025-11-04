@@ -47,8 +47,9 @@ class AuthGate extends StatelessWidget {
           return const InstagramStyleNavigation();
         }
 
-        // If user is not logged in, show login screen
-        return const LoginScreen();
+        // For demo purposes, show main app without authentication
+        // In production, you would show the login screen
+        return const InstagramStyleNavigation();
       },
     );
   }

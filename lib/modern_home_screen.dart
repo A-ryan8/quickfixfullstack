@@ -25,7 +25,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
 
   Future<void> _fetchComplaints() async {
     final urls = <String>[
-      'http://10.30.243.189:8000/api/complaints/public',
+      'http://10.45.233.189:8000/api/complaints/public',
       'http://10.0.2.2:8000/api/complaints/public',
       'http://localhost:8000/api/complaints/public',
       'http://127.0.0.1:8000/api/complaints/public',
@@ -56,7 +56,10 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
             final String title = (rawTitle?.trim().isNotEmpty == true) ? rawTitle! : 'Reported Issue';
             final String description = (c['description'] as String?) ?? (c['aiDescription'] as String?) ?? '';
             final String status = (c['status'] as String?) ?? 'New';
-            final String rawImage = (c['imageUrl'] as String?) ?? (c['imageURL'] as String?) ?? '';
+            final String rawImage = (c['imageUrl'] as String?)
+                ?? (c['image_url'] as String?)
+                ?? (c['imageURL'] as String?)
+                ?? '';
             final String imageUrl = _resolveImageUrl(rawImage);
             final dynamic createdRaw = c.containsKey('created_at') ? c['created_at'] : c['createdAt'];
             final int votes = (c['upvote_count'] is int)
@@ -140,7 +143,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
       // Try different API base URLs
       final bases = <String>[
         _apiBase ?? '',
-        'http://10.30.243.189:8000',
+        'http://10.45.233.189:8000',
         'http://10.0.2.2:8000',
         'http://localhost:8000',
         'http://127.0.0.1:8000',
